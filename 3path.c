@@ -22,14 +22,14 @@ char *find_executable(const char *command)
 	{
 		/* Command is an absolute path */
 		if (access(command, X_OK) == 0)
-			return strdup(command);
+			return (strdup(command));
 		else
-			return NULL;
+			return (NULL);
 	}
 
 	path_copy = strdup(path);
 	if (!path_copy)
-		return NULL;
+		return (NULL);
 
 	dir = strtok(path_copy, ":");
 	while (dir != NULL)
@@ -38,11 +38,11 @@ char *find_executable(const char *command)
 		if (stat(full_path, &st) == 0 && (st.st_mode & S_IXUSR))
 		{
 			free(path_copy);
-			return strdup(full_path);
+			return (strdup(full_path));
 		}
 		dir = strtok(NULL, ":");
 	}
 
 	free(path_copy);
-	return NULL;
+	return (NULL);
 }

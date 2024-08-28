@@ -1,20 +1,17 @@
 #include "shell.h"
 
 /**
- * execute_command - Executes a command using execve
- * @command: The command line to execute
+ * parse_command - Tokenizes a command line into arguments
+ * @command: The command line to parse
+ * @argv: Array to store the parsed arguments
  *
  * Return: void
  */
-void execute_command(char *command)
+void parse_command(char *command, char **argv)
 {
-	pid_t pid;
-	char *argv[100];
 	int i = 0;
 	char *token;
-	char *path;
 
-	/* Tokenize the command line into command and arguments */
 	token = strtok(command, " ");
 	while (token != NULL)
 	{
@@ -22,14 +19,18 @@ void execute_command(char *command)
 		token = strtok(NULL, " ");
 	}
 	argv[i] = NULL; /* Null-terminate the argument list */
+}
 
-	/* Find the full path of the command */
-	path = find_executable(argv[0]);
-	if (!path)
-	{
-		fprintf(stderr, "./shell: %s: not found\n", argv[0]);
-		return;
-	}
+/**
+ * run_command - Forks a child process to run the command
+ * @path: The full path to the executable
+ * @argv: The arguments for the command
+ *
+ * Return: void
+ */
+void run_command(char *path, char **argv)
+{
+	pid_t pid;
 
 	pid = fork();
 	if (pid == -1)
@@ -51,6 +52,32 @@ void execute_command(char *command)
 		free(path);
 		wait(NULL);
 	}
+}
+
+/**
+ * execute_command - Executes a command by finding its path and running it
+ * @command: The command line to execute
+ *
+ * Return: void
+ */
+void execute_command(char *command)
+{
+	char *argv[100];
+	char *path;
+
+	/* Parse the command into arguments */
+	parse_command(command, argv);
+
+	/* Find the full path of the command */
+	path = find_executable(argv[0]);
+	if (!path)
+	{
+		fprintf(stderr, "./shell: %s: not found\n", argv[0]);
+		return;
+	}
+
+	/* Run the command */
+	run_command(path, argv);
 }
 
 /**
