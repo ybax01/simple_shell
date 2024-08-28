@@ -1,10 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <string.h>
-
+#include "shell.h"
 
 /**
  * execute_command - Executes a command using execve
@@ -15,10 +9,12 @@
 void execute_command(char *command)
 {
 	pid_t pid;
-	char *argv[100]; /* Array to hold command and arguments */
+	char *argv[100];
 	int i = 0;
 	char *token;
+	char *path;
 
+	/* Tokenize the command line into command and arguments */
 	token = strtok(command, " ");
 	while (token != NULL)
 	{
@@ -26,6 +22,14 @@ void execute_command(char *command)
 		token = strtok(NULL, " ");
 	}
 	argv[i] = NULL; /* Null-terminate the argument list */
+
+	/* Find the full path of the command */
+	path = find_executable(argv[0]);
+	if (!path)
+	{
+		fprintf(stderr, "./shell: %s: not found\n", argv[0]);
+		return;
+	}
 
 	pid = fork();
 	if (pid == -1)
@@ -35,14 +39,16 @@ void execute_command(char *command)
 	}
 	else if (pid == 0)
 	{
-		if (execve(argv[0], argv, environ) == -1)
+		if (execve(path, argv, environ) == -1)
 		{
 			perror(argv[0]);
 		}
+		free(path);
 		exit(EXIT_FAILURE);
 	}
 	else
 	{
+		free(path);
 		wait(NULL);
 	}
 }
@@ -65,7 +71,7 @@ int main(void)
 		if (nread == -1)
 			break; /* Handle Ctrl+D (EOF) */
 
-		line[nread - 1] = '\0';
+		line[nread - 1] = '\0'; /* Remove newline character */
 
 		execute_command(line);
 	}
