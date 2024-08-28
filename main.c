@@ -40,7 +40,7 @@ void run_command(char *path, char **argv)
 	}
 	else if (pid == 0)
 	{
-		if (execve(path, argv, environ) == -1)
+		if (execve(path, argv, NULL) == -1)
 		{
 			perror(argv[0]);
 		}
@@ -99,6 +99,9 @@ int main(void)
 			break; /* Handle Ctrl+D (EOF) */
 
 		line[nread - 1] = '\0'; /* Remove newline character */
+
+		if (strcmp(line, "exit") == 0)
+			shell_exit();
 
 		execute_command(line);
 	}
