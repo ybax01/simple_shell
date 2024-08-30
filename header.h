@@ -1,5 +1,5 @@
-#ifndef SHELL_H
-#define SHELL_H
+#ifndef HEADER_H
+#define HEADER_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -111,7 +111,7 @@ typedef struct builtin
 } builtin_table;
 
 
-/* hsh.c */
+/* shell.c */
 int hsh(info_t *, char **);
 int find_builtin(info_t *);
 void find_cmd(info_t *);
