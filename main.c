@@ -1,90 +1,44 @@
-#include "shell.h"
+#include "header.h"
 
 /**
- * main - A simple UNIX command line interpreter
+ * main - entry point
+ * @ac: arg cnt
+ * @av: arg list
  *
- * Return: Always 0 (Success)
+ * Return: 0 on success, 1 on error
  */
-int main(void)
+int main(int ac, char **av)
 {
-	char *line = NULL;
-	size_t len = 0;
-	ssize_t nread;
+	info_t info[] = { INFO_INIT };
+	int fd = 2;
 
-	while (1)
+	asm ("mov %1, %0\n\t"
+		"add $3, %0"
+		: "=r" (fd)
+		: "r" (fd));
+
+	if (ac == 2)
 	{
-		printf("#cisfun$ ");
-		nread = getline(&line, &len, stdin);
-		if (nread == -1) /* Handle Ctrl+D */
-			break;
-
-		line[nread - 1] = '\0'; /* Remove newline character */
-
-		/* Exit the shell */
-		if (strcmp(line, "exit") == 0)
-			break;
-
-		execute_command(line);
-	}
-
-	free(line);
-	return (0);
-}
-
-/**
- * execute_command - Executes a command
- * @command: Command to execute
- */
-void execute_command(char *command)
-{
-	char *argv[2];
-	char *exec_path;
-	pid_t pid;
-	int status;
-
-	argv[0] = command;
-	argv[1] = NULL;
-
-	exec_path = find_executable(command);
-	if (exec_path == NULL)
-	{
-		fprintf(stderr, "./hsh: %s: not found\n", command);
-		return;
-	}
-
-	pid = fork();
-	if (pid == -1)
-	{
-		perror("fork");
-		exit(EXIT_FAILURE);
-	}
-	else if (pid == 0)
-	{
-		if (execve(exec_path, argv, NULL) == -1)
+		fd = open(av[1], O_RDONLY);
+		if (fd == -1)
 		{
-			perror("execve");
-			exit(EXIT_FAILURE);
+			if (errno == EACCES)
+				exit(126);
+			if (errno == ENOENT)
+			{
+				_eputs(av[0]);
+				_eputs(": 0: Can't open ");
+				_eputs(av[1]);
+				_eputchar('\n');
+				_eputchar(BUF_FLUSH);
+				exit(127);
+			}
+			return (EXIT_FAILURE);
 		}
+		info->readfd = fd;
 	}
-	else
-	{
-		do {
-			waitpid(pid, &status, WUNTRACED);
-		} while (!WIFEXITED(status) && !WIFSIGNALED(status));
-	}
-	free(exec_path);
+	populate_env_list(info);
+	read_history(info);
+	shell(info, av);
+	return (EXIT_SUCCESS);
 }
-
-/**
- * find_executable - Finds the full path of a command
- * @command: Command to find
- *
- * Return: Full path to command if found, NULL otherwise
- */
-char *find_executable(char *command)
-{
-	if (access(command, X_OK) == 0)
-		return (strdup(command));
-	return (NULL);
-}
-
